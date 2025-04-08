@@ -2,7 +2,8 @@
 // @name         Magnet Url
 // @namespace    http://tampermonkey.net/
 // @version      0.0.1
-// @description  try to take over the world!
+// @license      MIT
+// @description  复制磁力链接
 // @author       Xcec
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=xzonesoft.com
