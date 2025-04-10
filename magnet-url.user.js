@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Magnet Url
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.0.3
 // @license      MIT
 // @description  复制磁力链接
 // @author       Xcec
@@ -42,8 +42,8 @@
 
   // 清理旧的复制按钮
   function cleanupOldButtons() {
-    const oldButtons = document.querySelectorAll('button[data-magnet-copy]');
-    oldButtons.forEach(button => {
+    const oldButtons = document.querySelectorAll("button[data-magnet-copy]");
+    oldButtons.forEach((button) => {
       button.remove();
     });
   }
@@ -56,14 +56,26 @@
     // 在每个元素后增加一个按钮，点击复制磁力链接
     magnets.forEach((magnet) => {
       const button = document.createElement("button");
-      button.innerText = "Copy";
-      button.setAttribute('data-magnet-copy', 'true');
-      button.style.cssText =
-        "position: absolute; right: -54px; top: -5px; z-index: 999";
+      button.innerText = "复制";
+      button.setAttribute("data-magnet-copy", "true");
+      button.className = "magnet-copy-btn";
 
-      button.addEventListener("click", () => {
-        navigator.clipboard.writeText(magnet.link);
+      // 阻止事件冒泡和默认行为
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard.writeText(magnet.link).then(() => {
+          // 复制成功后的反馈
+          const originalText = button.innerText;
+          button.innerText = "已复制";
+          button.classList.add("copied");
+          setTimeout(() => {
+            button.innerText = originalText;
+            button.classList.remove("copied");
+          }, 1000);
+        });
       });
+
       magnet.element.style.cssText = "position: relative;";
       magnet.element.appendChild(button);
     });
@@ -149,6 +161,77 @@
     z-index: 1;
     user-select: none;
   }
+
+  /* 更新次数提示 */
+  .update-count {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    z-index: 999;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .update-count:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px);
+  }
+
+  .update-count:active {
+    transform: translateY(1px);
+  }
+
+  /* 复制按钮样式 */
+  .magnet-copy-btn {
+    position: absolute;
+    right: -54px;
+    top: -5px;
+    z-index: 999;
+    padding: 4px 12px;
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #4a90e2, #6366f1);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .magnet-copy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #6366f1, #4a90e2);
+  }
+
+  .magnet-copy-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .magnet-copy-btn.copied {
+    background: #10b981;
+    animation: pulse 0.5s ease;
+  }
+
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
   `;
   document.body.appendChild(style);
 
@@ -160,17 +243,56 @@
     <span class="hover-effect"></span>
   `;
 
+  // 创建更新次数提示
+  const updateCountElement = document.createElement("div");
+  updateCountElement.className = "update-count";
+  document.body.appendChild(updateCountElement);
+
   // 初始化磁力链接
   let magnets = updateMagnetLinks();
+  let updateCount = 1;
+  updateCountElement.textContent = `已更新 ${updateCount}/3 次`;
 
-  // 设置定时器每5秒更新一次
-  setInterval(() => {
-    magnets = updateMagnetLinks();
+  // 设置定时器每5秒更新一次，最多更新3次
+  let intervalId = setInterval(() => {
+    if (updateCount < 3) {
+      magnets = updateMagnetLinks();
+      updateCount++;
+      updateCountElement.textContent = `已更新 ${updateCount}/3 次`;
+    } else {
+      clearInterval(intervalId);
+      updateCountElement.textContent = "点击继续更新";
+    }
   }, 5000);
 
-  button.addEventListener("click", () => {
+  // 点击更新提示继续更新
+  updateCountElement.addEventListener("click", () => {
+    if (updateCount >= 3) {
+      updateCount = 0;
+      intervalId = setInterval(() => {
+        if (updateCount < 3) {
+          magnets = updateMagnetLinks();
+          updateCount++;
+          updateCountElement.textContent = `已更新 ${updateCount}/3 次`;
+        } else {
+          clearInterval(intervalId);
+          updateCountElement.textContent = "点击继续更新";
+        }
+      }, 5000);
+    }
+  });
+
+  button.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     const magnetLinks = magnets.map((magnet) => magnet.link);
-    navigator.clipboard.writeText(magnetLinks.join("\n"));
+    navigator.clipboard.writeText(magnetLinks.join("\n")).then(() => {
+      const originalText = button.querySelector(".btn-text").textContent;
+      button.querySelector(".btn-text").textContent = "已复制";
+      setTimeout(() => {
+        button.querySelector(".btn-text").textContent = originalText;
+      }, 1000);
+    });
   });
   document.body.appendChild(button);
 })();
