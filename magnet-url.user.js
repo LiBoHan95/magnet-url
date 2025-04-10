@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         Magnet Url
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @license      MIT
 // @description  复制磁力链接
-// @author       Xcec
+// @author       LiBoHan95
 // @match        *://*/*
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=xzonesoft.com
+// @icon         https://raw.githubusercontent.com/LiBoHan95/magnet-url/main/icon.png
 // @grant        none
 // ==/UserScript==
 
