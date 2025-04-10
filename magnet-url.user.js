@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Magnet Url
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      1.0.0
 // @license      MIT
 // @description  复制磁力链接
 // @author       Xcec
@@ -40,32 +40,38 @@
     return magnetLinks;
   }
 
-  // Get all magnet links and their closest parent elements
-  const magnets = extractMagnetLinks();
-
-  // 在每个元素后增加一个按钮，点击复制磁力链接
-  magnets.forEach((magnet) => {
-    const button = document.createElement("button");
-    button.innerText = "Copy";
-    button.style.cssText =
-      "position: absolute; right: -54px; top: -5px; z-index: 999";
-
-    button.addEventListener("click", () => {
-      navigator.clipboard.writeText(magnet.link);
+  // 清理旧的复制按钮
+  function cleanupOldButtons() {
+    const oldButtons = document.querySelectorAll('button[data-magnet-copy]');
+    oldButtons.forEach(button => {
+      button.remove();
     });
-    magnet.element.style.cssText = "position: relative;";
-    magnet.element.appendChild(button);
-  });
+  }
 
-  // 在页面底部增加一个按钮，点击复制所有磁力链接
-  const button = document.createElement("button");
-  button.className = "floating-btn"; // 使用类名控制样式
-  button.innerHTML = `
-    <span class="btn-text">🔗 Copy All</span>
-    <span class="hover-effect"></span>
-  `;
+  // 更新磁力链接和按钮
+  function updateMagnetLinks() {
+    cleanupOldButtons();
+    const magnets = extractMagnetLinks();
 
-  // 通过CSS类集中管理样式
+    // 在每个元素后增加一个按钮，点击复制磁力链接
+    magnets.forEach((magnet) => {
+      const button = document.createElement("button");
+      button.innerText = "Copy";
+      button.setAttribute('data-magnet-copy', 'true');
+      button.style.cssText =
+        "position: absolute; right: -54px; top: -5px; z-index: 999";
+
+      button.addEventListener("click", () => {
+        navigator.clipboard.writeText(magnet.link);
+      });
+      magnet.element.style.cssText = "position: relative;";
+      magnet.element.appendChild(button);
+    });
+
+    return magnets;
+  }
+
+  // 初始化样式
   const style = document.createElement("style");
   style.textContent = `
   .floating-btn {
@@ -144,11 +150,27 @@
     user-select: none;
   }
   `;
+  document.body.appendChild(style);
+
+  // 创建并添加浮动按钮
+  const button = document.createElement("button");
+  button.className = "floating-btn";
+  button.innerHTML = `
+    <span class="btn-text">🔗 Copy All</span>
+    <span class="hover-effect"></span>
+  `;
+
+  // 初始化磁力链接
+  let magnets = updateMagnetLinks();
+
+  // 设置定时器每5秒更新一次
+  setInterval(() => {
+    magnets = updateMagnetLinks();
+  }, 5000);
 
   button.addEventListener("click", () => {
     const magnetLinks = magnets.map((magnet) => magnet.link);
     navigator.clipboard.writeText(magnetLinks.join("\n"));
   });
-  document.body.appendChild(style);
   document.body.appendChild(button);
 })();
