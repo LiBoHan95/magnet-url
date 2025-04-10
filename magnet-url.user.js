@@ -6,7 +6,7 @@
 // @description  复制磁力链接
 // @author       LiBoHan95
 // @match        *://*/*
-// @icon         https://raw.githubusercontent.com/LiBoHan95/magnet-url/main/icon.png
+// @icon         https://raw.githubusercontent.com/LiBoHan95/magnet-url/master/favicon.ico
 // @grant        none
 // ==/UserScript==
 
